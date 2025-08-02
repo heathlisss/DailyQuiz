@@ -2,7 +2,6 @@ package com.example.dailyquiz.data.repository
 
 import android.text.Html
 import com.example.dailyquiz.data.local.QuizDao
-import com.example.dailyquiz.data.local.model.QuizAttemptEntity
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.data.model.QuizHistoryItem
 import com.example.dailyquiz.data.remote.OpenTdbApi

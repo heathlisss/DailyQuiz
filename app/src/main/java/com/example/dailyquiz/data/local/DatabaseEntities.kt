@@ -1,8 +1,7 @@
-package com.example.dailyquiz.data.local.model
+package com.example.dailyquiz.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
 
 @Entity(tableName = "quiz_attempts")
 data class QuizAttemptEntity(
@@ -16,7 +15,6 @@ data class QuizAttemptEntity(
 )
 
 @Entity(tableName = "question_results")
-@TypeConverters(StringListConverter::class)
 data class QuestionResultEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

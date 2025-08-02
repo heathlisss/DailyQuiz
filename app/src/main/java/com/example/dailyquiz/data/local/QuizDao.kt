@@ -1,8 +1,10 @@
 package com.example.dailyquiz.data.local
 
-import androidx.room.*
-import com.example.dailyquiz.data.local.model.QuestionResultEntity
-import com.example.dailyquiz.data.local.model.QuizAttemptEntity
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
 
 @Dao
 interface QuizDao {
