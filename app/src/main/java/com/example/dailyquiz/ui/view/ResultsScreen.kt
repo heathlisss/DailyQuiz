@@ -209,11 +209,19 @@ private fun QuizReviewCard(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Start
             )
-            Text(
-                text = question.questionText,
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = question.questionText,
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 3
+                )
+            }
+
             question.allAnswers.forEach { answer ->
                 val state = when {
                     answer == question.correctAnswer -> AnswerState.CORRECT
