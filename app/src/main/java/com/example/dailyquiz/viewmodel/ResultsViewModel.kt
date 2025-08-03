@@ -24,34 +24,56 @@ class ResultsViewModel(
         val resultTitle: String = "",
         val resultSubtitle: String = "",
         val isReviewVisible: Boolean = false,
-        val quizReview: QuizReview? = null
+        val quizReview: QuizReview? = null,
+        val canToggleReview: Boolean = true
     )
 
     private val _state = MutableStateFlow(ResultsState())
     val state = _state.asStateFlow()
 
-    // Теперь AppDestinations.ATTEMPT_ID_ARG будет виден
     private val attemptId: Long = savedStateHandle[AppDestinations.ATTEMPT_ID_ARG] ?: -1L
+    private val startWithReview: Boolean =
+        savedStateHandle[AppDestinations.START_WITH_REVIEW_ARG] ?: false
 
     init {
-        val correctAnswers: Int = savedStateHandle[AppDestinations.CORRECT_ANSWERS_ARG] ?: 0
-        val totalQuestions: Int = savedStateHandle[AppDestinations.TOTAL_QUESTIONS_ARG] ?: 5
-        val resultText = getResultTexts(correctAnswers)
-
-        _state.value = ResultsState(
-            correctAnswersCount = correctAnswers,
-            totalQuestions = totalQuestions,
-            resultTitle = resultText.title,
-            resultSubtitle = resultText.subtitle
-        )
+        loadInitialResults()
+        if (startWithReview) {
+            onToggleReview(forceShow = true)
+        }
     }
 
-    fun onToggleReview() {
+    fun onToggleReview(forceShow: Boolean = false) {
         val isCurrentlyVisible = _state.value.isReviewVisible
-        _state.update { it.copy(isReviewVisible = !isCurrentlyVisible) }
+        val newVisibility = if (forceShow) true else !isCurrentlyVisible
 
-        if (!isCurrentlyVisible && _state.value.quizReview == null) {
+        _state.update {
+            it.copy(
+                isReviewVisible = newVisibility,
+                canToggleReview = !startWithReview
+            )
+        }
+
+        if (newVisibility && _state.value.quizReview == null) {
             loadQuizReview()
+        }
+    }
+
+    private fun loadInitialResults() {
+        if (attemptId == -1L) return
+
+        viewModelScope.launch {
+            val attempt = quizRepository.getAttemptById(attemptId)
+            if (attempt != null) {
+                val resultText = getResultTexts(attempt.correctAnswersCount)
+                _state.update {
+                    it.copy(
+                        correctAnswersCount = attempt.correctAnswersCount,
+                        totalQuestions = attempt.totalQuestions,
+                        resultTitle = resultText.title,
+                        resultSubtitle = resultText.subtitle
+                    )
+                }
+            }
         }
     }
 

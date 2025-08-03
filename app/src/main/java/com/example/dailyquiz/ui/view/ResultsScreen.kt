@@ -15,14 +15,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import com.example.dailyquiz.R
 import com.example.dailyquiz.data.model.QuizReview
 import com.example.dailyquiz.data.model.ReviewedQuestion
+import com.example.dailyquiz.ui.AnswerOption
+import com.example.dailyquiz.ui.AnswerState
 import com.example.dailyquiz.ui.theme.DailyQuizTheme
 import com.example.dailyquiz.ui.theme.DarkPurple
 import com.example.dailyquiz.ui.theme.Gray
@@ -43,32 +53,42 @@ import com.example.dailyquiz.ui.theme.Yellow
 import com.example.dailyquiz.viewmodel.ResultsViewModel
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultsScreen(onRestart: () -> Unit) {
+fun ResultsScreen(onRestart: () -> Unit, onBack: () -> Unit) {
     val viewModel: ResultsViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Результаты") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                Text(
-                    text = "Результаты",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { viewModel.onToggleReview() },
+                        .clickable(enabled = state.canToggleReview) { viewModel.onToggleReview() },
                     shape = RoundedCornerShape(40.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface,
@@ -109,24 +129,26 @@ fun ResultsScreen(onRestart: () -> Unit) {
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onRestart,
-                    modifier = Modifier.fillMaxWidth(0.9f),
-                    shape = RoundedCornerShape(13.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = DarkPurple
-                    )
-                ) {
-                    Text(
-                        text = "НАЧАТЬ ЗАНОВО",
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(6.dp)
-                    )
+            if (state.canToggleReview) {
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onRestart,
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        shape = RoundedCornerShape(13.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = DarkPurple
+                        )
+                    ) {
+                        Text(
+                            text = "НАЧАТЬ ЗАНОВО",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(6.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -176,13 +198,13 @@ private fun QuizReviewCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = "Вопрос $questionNumber из $totalQuestions",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = Gray,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Start
@@ -228,7 +250,7 @@ private fun StarRating(score: Int) {
 @Composable
 private fun ResultsScreenPreview() {
     DailyQuizTheme {
-        ResultsScreen(onRestart = {})
+        ResultsScreen(onRestart = {}, onBack = {})
     }
 }
 
@@ -243,7 +265,7 @@ private fun QuizReviewCardPreview() {
         wasCorrect = false
     )
     DailyQuizTheme {
-        Surface() {
+        Surface(modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.background) {
             QuizReviewCard(
                 question = fakeReviewedQuestion,
                 questionNumber = 4,

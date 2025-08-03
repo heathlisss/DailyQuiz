@@ -104,4 +104,8 @@ class QuizRepository(
     private fun decodeHtml(text: String): String {
         return Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString()
     }
+
+    suspend fun getAttemptById(attemptId: Long): QuizAttemptEntity? {
+        return dao.getAttemptById(attemptId)
+    }
 }

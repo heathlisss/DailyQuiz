@@ -15,8 +15,7 @@ object AppDestinations {
     const val RESULTS_ROUTE = "results"
     const val HISTORY_ROUTE = "history"
     const val ATTEMPT_ID_ARG = "attemptId"
-    const val CORRECT_ANSWERS_ARG = "correctAnswers"
-    const val TOTAL_QUESTIONS_ARG = "totalQuestions"
+    const val START_WITH_REVIEW_ARG = "startWithReview"
 }
 
 @Composable
@@ -29,11 +28,9 @@ fun AppNavigation() {
     ) {
         composable(AppDestinations.QUIZ_ROUTE) {
             QuizScreen(
-                onQuizFinished = { attemptId, correct, total ->
+                onQuizFinished = { attemptId, _, _ ->
                     navController.navigate(
-                        "${AppDestinations.RESULTS_ROUTE}/$attemptId" +
-                                "?${AppDestinations.CORRECT_ANSWERS_ARG}=$correct" +
-                                "&${AppDestinations.TOTAL_QUESTIONS_ARG}=$total"
+                        "${AppDestinations.RESULTS_ROUTE}/$attemptId?${AppDestinations.START_WITH_REVIEW_ARG}=false"
                     ) {
                         popUpTo(AppDestinations.QUIZ_ROUTE) { inclusive = true }
                     }
@@ -46,29 +43,35 @@ fun AppNavigation() {
 
         composable(
             route = "${AppDestinations.RESULTS_ROUTE}/{${AppDestinations.ATTEMPT_ID_ARG}}" +
-                    "?${AppDestinations.CORRECT_ANSWERS_ARG}={${AppDestinations.CORRECT_ANSWERS_ARG}}" +
-                    "&${AppDestinations.TOTAL_QUESTIONS_ARG}={${AppDestinations.TOTAL_QUESTIONS_ARG}}",
+                    "?${AppDestinations.START_WITH_REVIEW_ARG}={${AppDestinations.START_WITH_REVIEW_ARG}}",
             arguments = listOf(
                 navArgument(AppDestinations.ATTEMPT_ID_ARG) { type = NavType.LongType },
-                navArgument(AppDestinations.CORRECT_ANSWERS_ARG) {
-                    type = NavType.IntType; defaultValue = 0
-                },
-                navArgument(AppDestinations.TOTAL_QUESTIONS_ARG) {
-                    type = NavType.IntType; defaultValue = 5
+                navArgument(AppDestinations.START_WITH_REVIEW_ARG) {
+                    type = NavType.BoolType; defaultValue = false
                 }
             )
         ) {
             ResultsScreen(
                 onRestart = {
                     navController.navigate(AppDestinations.QUIZ_ROUTE) {
-                        popUpTo(0) // Очищаем весь стек назад
+                        popUpTo(0)
                     }
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
 
         composable(AppDestinations.HISTORY_ROUTE) {
-            HistoryScreen(onBack = { navController.popBackStack() })
+            HistoryScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToReview = { attemptId ->
+                    navController.navigate(
+                        "${AppDestinations.RESULTS_ROUTE}/$attemptId?${AppDestinations.START_WITH_REVIEW_ARG}=true"
+                    )
+                }
+            )
         }
     }
 }

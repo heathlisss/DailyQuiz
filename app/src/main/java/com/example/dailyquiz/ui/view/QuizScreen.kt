@@ -40,6 +40,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.dailyquiz.R
 import com.example.dailyquiz.data.model.Question
+import com.example.dailyquiz.ui.AnswerOption
+import com.example.dailyquiz.ui.AnswerState
 import com.example.dailyquiz.ui.theme.DailyQuizTheme
 import com.example.dailyquiz.ui.theme.Gray
 import com.example.dailyquiz.ui.theme.LightPurple

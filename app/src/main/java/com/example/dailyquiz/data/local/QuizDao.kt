@@ -48,4 +48,7 @@ interface QuizDao {
 
     @Query("DELETE FROM quiz_attempts WHERE id = :attemptId")
     suspend fun deleteAttemptById(attemptId: Long)
+
+    @Query("SELECT * FROM quiz_attempts WHERE id = :attemptId")
+    suspend fun getAttemptById(attemptId: Long): QuizAttemptEntity?
 }

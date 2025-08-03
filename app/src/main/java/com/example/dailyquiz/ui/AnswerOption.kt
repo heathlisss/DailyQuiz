@@ -1,4 +1,4 @@
-package com.example.dailyquiz.ui.view
+package com.example.dailyquiz.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement

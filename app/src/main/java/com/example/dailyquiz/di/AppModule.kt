@@ -4,6 +4,7 @@ import androidx.room.Room
 import com.example.dailyquiz.data.local.AppDatabase
 import com.example.dailyquiz.data.remote.OpenTdbApi
 import com.example.dailyquiz.data.repository.QuizRepository
+import com.example.dailyquiz.viewmodel.HistoryViewModel
 import com.example.dailyquiz.viewmodel.QuizViewModel
 import com.example.dailyquiz.viewmodel.ResultsViewModel
 import com.squareup.moshi.Moshi
@@ -61,4 +62,5 @@ val appModule = module {
 
     viewModel { QuizViewModel(quizRepository = get()) }
     viewModel { ResultsViewModel(savedStateHandle = get(), quizRepository = get()) }
+    viewModel { HistoryViewModel(quizRepository = get()) }
 }
