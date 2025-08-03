@@ -56,7 +56,7 @@ fun QuizScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding), // Убрал горизонтальный паддинг отсюда
+                .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
             when (val currentState = state) {

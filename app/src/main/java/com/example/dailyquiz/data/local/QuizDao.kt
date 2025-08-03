@@ -5,18 +5,32 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.dailyquiz.data.model.Question
 
 @Dao
 interface QuizDao {
 
     @Transaction
-    suspend fun insertAttemptWithQuestions(
+    suspend fun saveFullQuizResult(
         attempt: QuizAttemptEntity,
-        questions: List<QuestionResultEntity>
+        questions: List<Question>,
+        userAnswers: Map<Int, String>
     ) {
         val attemptId = insertAttempt(attempt)
-        val questionsWithAttemptId = questions.map { it.copy(attemptId = attemptId) }
-        insertAllQuestions(questionsWithAttemptId)
+
+        val questionResultEntities = questions.mapIndexed { index, question ->
+            val userAnswer = userAnswers[index] ?: ""
+            QuestionResultEntity(
+                attemptId = attemptId,
+                questionText = question.questionText,
+                allAnswers = question.allShuffledAnswers,
+                correctAnswer = question.correctAnswer,
+                userAnswer = userAnswer,
+                wasCorrect = userAnswer == question.correctAnswer
+            )
+        }
+
+        insertAllQuestions(questionResultEntities)
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -73,9 +73,9 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
         val currentState = _state.value
         if (currentState is QuizState.InProgress) {
             val newSelectedAnswer = if (currentState.selectedAnswer == answer) {
-                null // Если кликнули по уже выбранному - отменяем выбор
+                null
             } else {
-                answer // Выбираем новый
+                answer
             }
 
             _state.value = currentState.copy(
@@ -110,7 +110,20 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
     }
 
     private fun finishQuiz() {
-        Log.d("QuizVM", "Quiz Finished! Answers: $userAnswers")
+        Log.d("QuizVM", "Quiz Finished! Saving results... Answers: $userAnswers")
+
+        viewModelScope.launch {
+            try {
+                quizRepository.saveQuizResult(
+                    questions = questions,
+                    userAnswers = userAnswers
+                )
+                Log.d("QuizVM", "Results saved successfully!")
+            } catch (e: Exception) {
+                Log.e("QuizVM", "Error saving results", e)
+            }
+        }
+
         _state.value = QuizState.Welcome
     }
 }

@@ -1,6 +1,7 @@
 package com.example.dailyquiz.data.repository
 
 import android.text.Html
+import com.example.dailyquiz.data.local.QuizAttemptEntity
 import com.example.dailyquiz.data.local.QuizDao
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.data.model.QuizHistoryItem
@@ -52,7 +53,32 @@ class QuizRepository(
         dao.deleteAttemptById(id)
     }
 
-    // Вспомогательная функция для декодирования HTML-сущностей типа "
+    suspend fun saveQuizResult(
+        questions: List<Question>,
+        userAnswers: Map<Int, String>
+    ) {
+        var correctAnswersCount = 0
+        questions.forEachIndexed { index, question ->
+            if (userAnswers[index] == question.correctAnswer) {
+                correctAnswersCount++
+            }
+        }
+
+        val attemptEntity = QuizAttemptEntity(
+            timestamp = System.currentTimeMillis(),
+            correctAnswersCount = correctAnswersCount,
+            totalQuestions = questions.size,
+            category = questions.firstOrNull()?.category ?: "Unknown",
+            difficulty = questions.firstOrNull()?.difficulty ?: "Unknown"
+        )
+
+        dao.saveFullQuizResult(
+            attempt = attemptEntity,
+            questions = questions,
+            userAnswers = userAnswers
+        )
+    }
+
     private fun decodeHtml(text: String): String {
         return Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString()
     }
