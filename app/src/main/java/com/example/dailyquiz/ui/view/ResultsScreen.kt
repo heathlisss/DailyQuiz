@@ -43,6 +43,8 @@ import com.example.dailyquiz.ui.AnswerState
 import com.example.dailyquiz.ui.theme.DailyQuizTheme
 import com.example.dailyquiz.ui.theme.DarkPurple
 import com.example.dailyquiz.ui.theme.Gray
+import com.example.dailyquiz.ui.theme.Purple
+import com.example.dailyquiz.ui.theme.White
 import com.example.dailyquiz.ui.theme.Yellow
 import com.example.dailyquiz.viewmodel.ResultsViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -108,6 +110,24 @@ fun ResultsScreen(onRestart: () -> Unit, onBack: () -> Unit) {
                             fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = onRestart,
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            shape = RoundedCornerShape(13.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Purple,
+                                contentColor = White
+                            )
+                        ) {
+                            Text(
+                                text = "НАЧАТЬ ЗАНОВО",
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(6.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -118,7 +138,7 @@ fun ResultsScreen(onRestart: () -> Unit, onBack: () -> Unit) {
                 }
             }
 
-            if (state.canToggleReview) {
+            if (state.canToggleReview && state.isReviewVisible) {
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
