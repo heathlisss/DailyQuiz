@@ -5,6 +5,8 @@ import com.example.dailyquiz.data.local.QuizAttemptEntity
 import com.example.dailyquiz.data.local.QuizDao
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.data.model.QuizHistoryItem
+import com.example.dailyquiz.data.model.QuizReview
+import com.example.dailyquiz.data.model.ReviewedQuestion
 import com.example.dailyquiz.data.remote.OpenTdbApi
 
 class QuizRepository(
@@ -56,7 +58,7 @@ class QuizRepository(
     suspend fun saveQuizResult(
         questions: List<Question>,
         userAnswers: Map<Int, String>
-    ) {
+    ): Long {
         var correctAnswersCount = 0
         questions.forEachIndexed { index, question ->
             if (userAnswers[index] == question.correctAnswer) {
@@ -72,10 +74,30 @@ class QuizRepository(
             difficulty = questions.firstOrNull()?.difficulty ?: "Unknown"
         )
 
-        dao.saveFullQuizResult(
+        return dao.saveFullQuizResult(
             attempt = attemptEntity,
             questions = questions,
             userAnswers = userAnswers
+        )
+    }
+
+    suspend fun getQuizReview(attemptId: Long): QuizReview? {
+        val attemptWithQuestions = dao.getAttemptWithQuestions(attemptId) ?: return null
+
+        val reviewedQuestions = attemptWithQuestions.questions.map {
+            ReviewedQuestion(
+                questionText = it.questionText,
+                allAnswers = it.allAnswers,
+                correctAnswer = it.correctAnswer,
+                userAnswer = it.userAnswer,
+                wasCorrect = it.wasCorrect
+            )
+        }
+
+        return QuizReview(
+            questions = reviewedQuestions,
+            category = attemptWithQuestions.attempt.category,
+            difficulty = attemptWithQuestions.attempt.difficulty
         )
     }
 

@@ -38,7 +38,11 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     sealed interface NavigationEvent {
-        data class ToResults(val correctAnswers: Int, val totalQuestions: Int) : NavigationEvent
+        data class ToResults(
+            val attemptId: Long,
+            val correctAnswers: Int,
+            val totalQuestions: Int
+        ) : NavigationEvent
         data object ToHistory : NavigationEvent
     }
 
@@ -123,19 +127,24 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
         Log.d("QuizVM", "Quiz Finished! Saving results... Answers: $userAnswers")
         viewModelScope.launch {
             try {
-                quizRepository.saveQuizResult(questions, userAnswers)
-                Log.d("QuizVM", "Results saved successfully!")
+                val attemptId = quizRepository.saveQuizResult(questions, userAnswers)
+                Log.d("QuizVM", "Results saved successfully with id $attemptId!")
+
+                val correctCount = userAnswers.count { (index, answer) ->
+                    questions.getOrNull(index)?.correctAnswer == answer
+                }
+
+                _navigationEvent.send(
+                    NavigationEvent.ToResults(
+                        attemptId,
+                        correctCount,
+                        questions.size
+                    )
+                )
             } catch (e: Exception) {
                 Log.e("QuizVM", "Error saving results", e)
+                _state.value = QuizState.Error("Ошибка при сохранении результатов.")
             }
-        }
-
-        val correctCount = userAnswers.count { (index, answer) ->
-            questions.getOrNull(index)?.correctAnswer == answer
-        }
-
-        viewModelScope.launch {
-            _navigationEvent.send(NavigationEvent.ToResults(correctCount, questions.size))
         }
     }
 }

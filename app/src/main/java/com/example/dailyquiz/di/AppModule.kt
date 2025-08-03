@@ -60,5 +60,5 @@ val appModule = module {
     }
 
     viewModel { QuizViewModel(quizRepository = get()) }
-    viewModel { ResultsViewModel(savedStateHandle = get()) }
+    viewModel { ResultsViewModel(savedStateHandle = get(), quizRepository = get()) }
 }

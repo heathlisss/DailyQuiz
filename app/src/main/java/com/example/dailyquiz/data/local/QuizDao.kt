@@ -15,7 +15,7 @@ interface QuizDao {
         attempt: QuizAttemptEntity,
         questions: List<Question>,
         userAnswers: Map<Int, String>
-    ) {
+    ): Long {
         val attemptId = insertAttempt(attempt)
 
         val questionResultEntities = questions.mapIndexed { index, question ->
@@ -29,8 +29,8 @@ interface QuizDao {
                 wasCorrect = userAnswer == question.correctAnswer
             )
         }
-
         insertAllQuestions(questionResultEntities)
+        return attemptId
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -42,8 +42,9 @@ interface QuizDao {
     @Query("SELECT * FROM quiz_attempts ORDER BY timestamp DESC")
     suspend fun getAllAttempts(): List<QuizAttemptEntity>
 
-    @Query("SELECT * FROM question_results WHERE attemptId = :attemptId")
-    suspend fun getQuestionsForAttempt(attemptId: Long): List<QuestionResultEntity>
+    @Transaction
+    @Query("SELECT * FROM quiz_attempts WHERE id = :attemptId")
+    suspend fun getAttemptWithQuestions(attemptId: Long): QuizAttemptWithQuestions?
 
     @Query("DELETE FROM quiz_attempts WHERE id = :attemptId")
     suspend fun deleteAttemptById(attemptId: Long)

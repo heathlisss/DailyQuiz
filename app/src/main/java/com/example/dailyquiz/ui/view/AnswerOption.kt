@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,7 +63,7 @@ fun AnswerOption(
         AnswerState.INCORRECT -> Red
     }
     val contentColor = when (state) {
-        AnswerState.DEFAULT -> MaterialTheme.colorScheme.onSurface
+        AnswerState.DEFAULT -> Black
         AnswerState.SELECTED -> DarkPurple
         AnswerState.CORRECT -> Green
         AnswerState.INCORRECT -> Red
@@ -79,7 +80,7 @@ fun AnswerOption(
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = if (state == AnswerState.DEFAULT) LightGray else MaterialTheme.colorScheme.surface,
-            disabledContentColor = contentColor.copy(alpha = 0.5f)
+            disabledContentColor = contentColor.copy(alpha = 1f)
         ),
         border = BorderStroke(2.dp, borderColor),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
@@ -96,7 +97,7 @@ fun AnswerOption(
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = text, style = MaterialTheme.typography.bodyLarge)
+            Text(text = text, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

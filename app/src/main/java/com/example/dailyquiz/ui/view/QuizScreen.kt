@@ -51,7 +51,8 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun QuizScreen(
-    onQuizFinished: (correct: Int, total: Int) -> Unit,
+    // ИЗМЕНЕНИЕ ЗДЕСЬ: Лямбда теперь принимает 3 параметра
+    onQuizFinished: (attemptId: Long, correct: Int, total: Int) -> Unit,
     onHistoryClicked: () -> Unit
 ) {
     val viewModel: QuizViewModel = koinViewModel()
@@ -60,11 +61,12 @@ fun QuizScreen(
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
+                // ИЗМЕНЕНИЕ ЗДЕСЬ: Передаем все 3 параметра
                 is QuizViewModel.NavigationEvent.ToResults -> onQuizFinished(
+                    event.attemptId,
                     event.correctAnswers,
                     event.totalQuestions
                 )
-
                 QuizViewModel.NavigationEvent.ToHistory -> onHistoryClicked()
             }
         }
@@ -91,6 +93,7 @@ fun QuizScreen(
                     onNextClick = { viewModel.onEvent(QuizEvent.OnNextQuestionClicked) }
                 )
                 is QuizState.Error -> {
+                    // Можно сделать более красивый экран ошибки
                     Text(text = currentState.message, color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -128,7 +131,7 @@ private fun WelcomeContent(
             ) {
                 Text(
                     text = "История",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(
@@ -146,9 +149,8 @@ private fun WelcomeContent(
         Spacer(modifier = Modifier.height(32.dp))
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 0.dp),
-            shape = RoundedCornerShape(48.dp),
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(40.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface
@@ -170,15 +172,16 @@ private fun WelcomeContent(
                 Button(
                     onClick = onStartClick,
                     modifier = Modifier.fillMaxWidth(0.9f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(13.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Purple,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(
-                        text = "Начать викторину",
-                        style = MaterialTheme.typography.labelLarge
+                        text = "НАЧАТЬ ВИКТОРИНУ",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(6.dp)
                     )
                 }
             }
@@ -242,7 +245,7 @@ private fun InProgressContent(
         Spacer(modifier = Modifier.height(32.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(48.dp),
+            shape = RoundedCornerShape(40.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface
@@ -285,8 +288,8 @@ private fun InProgressContent(
                 Button(
                     onClick = onNextClick,
                     enabled = state.isNextEnabled,
-                    modifier = Modifier.fillMaxWidth(0.7f),
-                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    shape = RoundedCornerShape(13.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -295,8 +298,9 @@ private fun InProgressContent(
                     )
                 ) {
                     Text(
-                        text = if (state.isLastQuestion) "Завершить" else "Далее",
-                        style = MaterialTheme.typography.labelLarge
+                        text = if (state.isLastQuestion) "ЗАВЕРШИТЬ" else "ДАЛЕЕ",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(6.dp)
                     )
                 }
             }

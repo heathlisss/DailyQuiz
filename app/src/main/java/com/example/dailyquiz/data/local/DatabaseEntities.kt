@@ -1,7 +1,9 @@
 package com.example.dailyquiz.data.local
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import androidx.room.TypeConverters
 
 @Entity(tableName = "quiz_attempts")
@@ -26,4 +28,13 @@ data class QuestionResultEntity(
     val correctAnswer: String,
     val userAnswer: String,
     val wasCorrect: Boolean
+)
+
+data class QuizAttemptWithQuestions(
+    @Embedded val attempt: QuizAttemptEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "attemptId"
+    )
+    val questions: List<QuestionResultEntity>
 )

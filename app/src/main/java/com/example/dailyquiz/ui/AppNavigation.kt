@@ -14,6 +14,7 @@ object AppDestinations {
     const val QUIZ_ROUTE = "quiz"
     const val RESULTS_ROUTE = "results"
     const val HISTORY_ROUTE = "history"
+    const val ATTEMPT_ID_ARG = "attemptId"
     const val CORRECT_ANSWERS_ARG = "correctAnswers"
     const val TOTAL_QUESTIONS_ARG = "totalQuestions"
 }
@@ -28,8 +29,12 @@ fun AppNavigation() {
     ) {
         composable(AppDestinations.QUIZ_ROUTE) {
             QuizScreen(
-                onQuizFinished = { correct, total ->
-                    navController.navigate("${AppDestinations.RESULTS_ROUTE}/$correct/$total") {
+                onQuizFinished = { attemptId, correct, total ->
+                    navController.navigate(
+                        "${AppDestinations.RESULTS_ROUTE}/$attemptId" +
+                                "?${AppDestinations.CORRECT_ANSWERS_ARG}=$correct" +
+                                "&${AppDestinations.TOTAL_QUESTIONS_ARG}=$total"
+                    ) {
                         popUpTo(AppDestinations.QUIZ_ROUTE) { inclusive = true }
                     }
                 },
@@ -40,16 +45,23 @@ fun AppNavigation() {
         }
 
         composable(
-            route = "${AppDestinations.RESULTS_ROUTE}/{${AppDestinations.CORRECT_ANSWERS_ARG}}/{${AppDestinations.TOTAL_QUESTIONS_ARG}}",
+            route = "${AppDestinations.RESULTS_ROUTE}/{${AppDestinations.ATTEMPT_ID_ARG}}" +
+                    "?${AppDestinations.CORRECT_ANSWERS_ARG}={${AppDestinations.CORRECT_ANSWERS_ARG}}" +
+                    "&${AppDestinations.TOTAL_QUESTIONS_ARG}={${AppDestinations.TOTAL_QUESTIONS_ARG}}",
             arguments = listOf(
-                navArgument(AppDestinations.CORRECT_ANSWERS_ARG) { type = NavType.IntType },
-                navArgument(AppDestinations.TOTAL_QUESTIONS_ARG) { type = NavType.IntType }
+                navArgument(AppDestinations.ATTEMPT_ID_ARG) { type = NavType.LongType },
+                navArgument(AppDestinations.CORRECT_ANSWERS_ARG) {
+                    type = NavType.IntType; defaultValue = 0
+                },
+                navArgument(AppDestinations.TOTAL_QUESTIONS_ARG) {
+                    type = NavType.IntType; defaultValue = 5
+                }
             )
-        ) { backStackEntry ->
+        ) {
             ResultsScreen(
                 onRestart = {
                     navController.navigate(AppDestinations.QUIZ_ROUTE) {
-                        popUpTo(AppDestinations.RESULTS_ROUTE) { inclusive = true }
+                        popUpTo(0) // Очищаем весь стек назад
                     }
                 }
             )
