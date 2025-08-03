@@ -12,17 +12,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -53,7 +57,6 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun QuizScreen(
-    // ИЗМЕНЕНИЕ ЗДЕСЬ: Лямбда теперь принимает 3 параметра
     onQuizFinished: (attemptId: Long, correct: Int, total: Int) -> Unit,
     onHistoryClicked: () -> Unit
 ) {
@@ -63,13 +66,14 @@ fun QuizScreen(
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
-                // ИЗМЕНЕНИЕ ЗДЕСЬ: Передаем все 3 параметра
                 is QuizViewModel.NavigationEvent.ToResults -> onQuizFinished(
                     event.attemptId,
                     event.correctAnswers,
                     event.totalQuestions
                 )
                 QuizViewModel.NavigationEvent.ToHistory -> onHistoryClicked()
+                QuizViewModel.NavigationEvent.ToWelcome -> {
+                }
             }
         }
     }
@@ -92,10 +96,10 @@ fun QuizScreen(
                     onAnswerSelected = { answer ->
                         viewModel.onEvent(QuizEvent.OnAnswerSelected(answer))
                     },
-                    onNextClick = { viewModel.onEvent(QuizEvent.OnNextQuestionClicked) }
+                    onNextClick = { viewModel.onEvent(QuizEvent.OnNextQuestionClicked) },
+                    onBackClick = { viewModel.onEvent(QuizEvent.OnBackClicked) }
                 )
                 is QuizState.Error -> {
-                    // Можно сделать более красивый экран ошибки
                     Text(text = currentState.message, color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -228,25 +232,44 @@ private fun LoadingContent() {
 private fun InProgressContent(
     state: QuizState.InProgress,
     onAnswerSelected: (String) -> Unit,
-    onNextClick: () -> Unit
+    onNextClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "Логотип DailyQuiz",
+        Row(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(200.dp),
-        )
-        Spacer(modifier = Modifier.height(32.dp))
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 40.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Назад",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.logo),
+                    contentDescription = "Логотип DailyQuiz",
+                    modifier = Modifier.height(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(48.dp))
+        }
+
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(40.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -266,13 +289,21 @@ private fun InProgressContent(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = state.question.questionText,
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                Box(
+                    modifier = Modifier.defaultMinSize(minHeight = 84.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = state.question.questionText,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
+
                 state.question.allShuffledAnswers.forEach { answer ->
                     val answerState = if (answer == state.selectedAnswer) {
                         AnswerState.SELECTED
@@ -307,6 +338,15 @@ private fun InProgressContent(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Вернуться к предыдущим вопросам нельзя",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
     }
 }
 
@@ -355,7 +395,8 @@ private fun InProgressContent_NotSelectedPreview() {
             InProgressContent(
                 state = fakeState,
                 onAnswerSelected = {},
-                onNextClick = {}
+                onNextClick = {},
+                onBackClick = {}
             )
         }
     }
@@ -385,7 +426,8 @@ private fun InProgressContent_AnswerSelectedPreview() {
             InProgressContent(
                 state = fakeState,
                 onAnswerSelected = {},
-                onNextClick = {}
+                onNextClick = {},
+                onBackClick = {}
             )
         }
     }

@@ -34,15 +34,13 @@ val appModule = module {
             .add(KotlinJsonAdapterFactory())
             .build()
     }
-    single {
+    single<OpenTdbApi> { // Явно указываем тип для лучшей читаемости
         Retrofit.Builder()
             .baseUrl("https://opentdb.com/")
             .client(get<OkHttpClient>())
             .addConverterFactory(MoshiConverterFactory.create(get<Moshi>()))
             .build()
-    }
-    single {
-        get<Retrofit>().create(OpenTdbApi::class.java)
+            .create(OpenTdbApi::class.java)
     }
 
     single {
@@ -60,7 +58,18 @@ val appModule = module {
         QuizRepository(api = get(), dao = get())
     }
 
-    viewModel { QuizViewModel(quizRepository = get()) }
-    viewModel { ResultsViewModel(savedStateHandle = get(), quizRepository = get()) }
+    // ИЗМЕНЕНИЕ ЗДЕСЬ
+    viewModel { params -> // Koin может передать параметры, включая SavedStateHandle
+        QuizViewModel(
+            quizRepository = get(),
+            savedStateHandle = params.get() // Получаем SavedStateHandle из параметров
+        )
+    }
+    viewModel { params ->
+        ResultsViewModel(
+            savedStateHandle = params.get(),
+            quizRepository = get()
+        )
+    }
     viewModel { HistoryViewModel(quizRepository = get()) }
 }

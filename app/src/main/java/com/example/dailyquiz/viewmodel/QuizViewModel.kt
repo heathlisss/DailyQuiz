@@ -1,17 +1,22 @@
-package com.example.dailyquiz.viewmodel
+package com.example.dailyquiz.viewmodel // Убедитесь, что ваш пакет правильный
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.data.repository.QuizRepository
+import com.example.dailyquiz.ui.AppDestinations
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
+class QuizViewModel(
+    private val quizRepository: QuizRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     sealed interface QuizState {
         data object Welcome : QuizState
@@ -32,6 +37,7 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
         data object OnHistoryClicked : QuizEvent
         data object OnNextQuestionClicked : QuizEvent
         data class OnAnswerSelected(val answer: String) : QuizEvent
+        data object OnBackClicked : QuizEvent // ДОБАВЛЕНО
     }
 
     private val _navigationEvent = Channel<NavigationEvent>()
@@ -44,6 +50,7 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
             val totalQuestions: Int
         ) : NavigationEvent
         data object ToHistory : NavigationEvent
+        data object ToWelcome : NavigationEvent // ДОБАВЛЕНО
     }
 
     private val _state = MutableStateFlow<QuizState>(QuizState.Welcome)
@@ -53,16 +60,42 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
     private var userAnswers: MutableMap<Int, String> = mutableMapOf()
     private var currentQuestionIndex = 0
 
+    init {
+        val attemptIdToRetry: Long = savedStateHandle[AppDestinations.ATTEMPT_ID_ARG] ?: -1L
+        if (attemptIdToRetry != -1L) {
+            retryQuiz(attemptIdToRetry)
+        }
+    }
+
     fun onEvent(event: QuizEvent) {
         when (event) {
             QuizEvent.OnStartQuizClicked -> startQuiz()
             QuizEvent.OnHistoryClicked -> viewModelScope.launch {
-                _navigationEvent.send(
-                    NavigationEvent.ToHistory
-                )
+                _navigationEvent.send(NavigationEvent.ToHistory)
             }
             is QuizEvent.OnAnswerSelected -> selectAnswer(event.answer)
             QuizEvent.OnNextQuestionClicked -> loadNextQuestion()
+            // ДОБАВЛЕНА ОБРАБОТКА
+            QuizEvent.OnBackClicked -> {
+                _state.value = QuizState.Welcome
+                // Опционально, если хотите управлять через навигацию, а не просто сменой стейта
+                // viewModelScope.launch { _navigationEvent.send(NavigationEvent.ToWelcome) }
+            }
+        }
+    }
+
+    private fun retryQuiz(attemptId: Long) {
+        viewModelScope.launch {
+            _state.value = QuizState.Loading
+            val oldQuestions = quizRepository.getQuizForRetry(attemptId)
+            if (!oldQuestions.isNullOrEmpty()) {
+                questions = oldQuestions
+                userAnswers.clear()
+                currentQuestionIndex = 0
+                loadQuestionAtIndex(0)
+            } else {
+                startQuiz()
+            }
         }
     }
 

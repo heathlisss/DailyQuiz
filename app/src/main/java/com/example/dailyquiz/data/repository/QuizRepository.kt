@@ -101,6 +101,19 @@ class QuizRepository(
         )
     }
 
+    suspend fun getQuizForRetry(attemptId: Long): List<Question>? {
+        val attemptWithQuestions = dao.getAttemptWithQuestions(attemptId) ?: return null
+        return attemptWithQuestions.questions.map {
+            Question(
+                questionText = it.questionText,
+                correctAnswer = it.correctAnswer,
+                allShuffledAnswers = it.allAnswers, // Ответы уже были перемешаны при сохранении
+                category = attemptWithQuestions.attempt.category,
+                difficulty = attemptWithQuestions.attempt.difficulty
+            )
+        }
+    }
+
     private fun decodeHtml(text: String): String {
         return Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString()
     }
