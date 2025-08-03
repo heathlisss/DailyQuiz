@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.data.repository.QuizRepository
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
@@ -19,9 +21,9 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
             val currentQuestionIndex: Int,
             val totalQuestions: Int,
             val selectedAnswer: String?,
-            val isNextEnabled: Boolean
+            val isNextEnabled: Boolean,
+            val isLastQuestion: Boolean
         ) : QuizState
-
         data class Error(val message: String) : QuizState
     }
 
@@ -30,6 +32,14 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
         data object OnHistoryClicked : QuizEvent
         data object OnNextQuestionClicked : QuizEvent
         data class OnAnswerSelected(val answer: String) : QuizEvent
+    }
+
+    private val _navigationEvent = Channel<NavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
+
+    sealed interface NavigationEvent {
+        data class ToResults(val correctAnswers: Int, val totalQuestions: Int) : NavigationEvent
+        data object ToHistory : NavigationEvent
     }
 
     private val _state = MutableStateFlow<QuizState>(QuizState.Welcome)
@@ -42,7 +52,11 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
     fun onEvent(event: QuizEvent) {
         when (event) {
             QuizEvent.OnStartQuizClicked -> startQuiz()
-            QuizEvent.OnHistoryClicked -> Log.d("QuizVM", "Navigate to History")
+            QuizEvent.OnHistoryClicked -> viewModelScope.launch {
+                _navigationEvent.send(
+                    NavigationEvent.ToHistory
+                )
+            }
             is QuizEvent.OnAnswerSelected -> selectAnswer(event.answer)
             QuizEvent.OnNextQuestionClicked -> loadNextQuestion()
         }
@@ -72,12 +86,7 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
     private fun selectAnswer(answer: String) {
         val currentState = _state.value
         if (currentState is QuizState.InProgress) {
-            val newSelectedAnswer = if (currentState.selectedAnswer == answer) {
-                null
-            } else {
-                answer
-            }
-
+            val newSelectedAnswer = if (currentState.selectedAnswer == answer) null else answer
             _state.value = currentState.copy(
                 selectedAnswer = newSelectedAnswer,
                 isNextEnabled = newSelectedAnswer != null
@@ -105,25 +114,28 @@ class QuizViewModel(private val quizRepository: QuizRepository) : ViewModel() {
             currentQuestionIndex = index,
             totalQuestions = questions.size,
             selectedAnswer = null,
-            isNextEnabled = false
+            isNextEnabled = false,
+            isLastQuestion = (index == questions.size - 1)
         )
     }
 
     private fun finishQuiz() {
         Log.d("QuizVM", "Quiz Finished! Saving results... Answers: $userAnswers")
-
         viewModelScope.launch {
             try {
-                quizRepository.saveQuizResult(
-                    questions = questions,
-                    userAnswers = userAnswers
-                )
+                quizRepository.saveQuizResult(questions, userAnswers)
                 Log.d("QuizVM", "Results saved successfully!")
             } catch (e: Exception) {
                 Log.e("QuizVM", "Error saving results", e)
             }
         }
 
-        _state.value = QuizState.Welcome
+        val correctCount = userAnswers.count { (index, answer) ->
+            questions.getOrNull(index)?.correctAnswer == answer
+        }
+
+        viewModelScope.launch {
+            _navigationEvent.send(NavigationEvent.ToResults(correctCount, questions.size))
+        }
     }
 }

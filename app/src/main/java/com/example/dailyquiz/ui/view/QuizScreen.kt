@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.example.dailyquiz.R
 import com.example.dailyquiz.data.model.Question
 import com.example.dailyquiz.ui.theme.DailyQuizTheme
+import com.example.dailyquiz.ui.theme.Gray
 import com.example.dailyquiz.ui.theme.LightPurple
 import com.example.dailyquiz.ui.theme.Purple
 import com.example.dailyquiz.viewmodel.QuizViewModel
@@ -48,9 +50,25 @@ import com.example.dailyquiz.viewmodel.QuizViewModel.QuizState
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun QuizScreen() {
+fun QuizScreen(
+    onQuizFinished: (correct: Int, total: Int) -> Unit,
+    onHistoryClicked: () -> Unit
+) {
     val viewModel: QuizViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is QuizViewModel.NavigationEvent.ToResults -> onQuizFinished(
+                    event.correctAnswers,
+                    event.totalQuestions
+                )
+
+                QuizViewModel.NavigationEvent.ToHistory -> onHistoryClicked()
+            }
+        }
+    }
 
     Scaffold { innerPadding ->
         Box(
@@ -64,7 +82,6 @@ fun QuizScreen() {
                     onStartClick = { viewModel.onEvent(QuizEvent.OnStartQuizClicked) },
                     onHistoryClick = { viewModel.onEvent(QuizEvent.OnHistoryClicked) }
                 )
-
                 is QuizState.Loading -> LoadingContent()
                 is QuizState.InProgress -> InProgressContent(
                     state = currentState,
@@ -73,7 +90,6 @@ fun QuizScreen() {
                     },
                     onNextClick = { viewModel.onEvent(QuizEvent.OnNextQuestionClicked) }
                 )
-
                 is QuizState.Error -> {
                     Text(text = currentState.message, color = MaterialTheme.colorScheme.error)
                 }
@@ -94,7 +110,6 @@ private fun WelcomeContent(
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(32.dp))
-
         Button(
             onClick = onHistoryClick,
             modifier = Modifier
@@ -122,16 +137,13 @@ private fun WelcomeContent(
                 )
             }
         }
-
         Spacer(modifier = Modifier.weight(1f))
-
         Image(
             painter = painterResource(R.drawable.logo),
             contentDescription = "Логотип DailyQuiz",
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -188,7 +200,6 @@ private fun LoadingContent() {
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         val infiniteTransition = rememberInfiniteTransition(label = "rotation_transition")
         val rotation by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -199,7 +210,6 @@ private fun LoadingContent() {
             ),
             label = "rotation_animation"
         )
-
         Image(
             painter = painterResource(R.drawable.resource_default),
             contentDescription = "Загрузка вопросов",
@@ -230,7 +240,6 @@ private fun InProgressContent(
                 .width(200.dp),
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(48.dp),
@@ -251,18 +260,14 @@ private fun InProgressContent(
                     color = LightPurple,
                     textAlign = TextAlign.Center
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
                     text = state.question.questionText,
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 state.question.allShuffledAnswers.forEach { answer ->
                     val answerState = if (answer == state.selectedAnswer) {
                         AnswerState.SELECTED
@@ -276,9 +281,7 @@ private fun InProgressContent(
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Button(
                     onClick = onNextClick,
                     enabled = state.isNextEnabled,
@@ -286,11 +289,13 @@ private fun InProgressContent(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContainerColor = Gray,
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
                     Text(
-                        text = "Далее",
+                        text = if (state.isLastQuestion) "Завершить" else "Далее",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -335,7 +340,8 @@ private fun InProgressContent_NotSelectedPreview() {
         currentQuestionIndex = 2,
         totalQuestions = 5,
         selectedAnswer = null,
-        isNextEnabled = false
+        isNextEnabled = false,
+        isLastQuestion = false
     )
 
     DailyQuizTheme {
@@ -364,7 +370,8 @@ private fun InProgressContent_AnswerSelectedPreview() {
         currentQuestionIndex = 2,
         totalQuestions = 5,
         selectedAnswer = "Jetpack Compose",
-        isNextEnabled = true
+        isNextEnabled = true,
+        isLastQuestion = false
     )
 
     DailyQuizTheme {

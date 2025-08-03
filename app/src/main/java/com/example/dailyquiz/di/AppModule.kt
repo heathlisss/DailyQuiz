@@ -5,6 +5,7 @@ import com.example.dailyquiz.data.local.AppDatabase
 import com.example.dailyquiz.data.remote.OpenTdbApi
 import com.example.dailyquiz.data.repository.QuizRepository
 import com.example.dailyquiz.viewmodel.QuizViewModel
+import com.example.dailyquiz.viewmodel.ResultsViewModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -59,4 +60,5 @@ val appModule = module {
     }
 
     viewModel { QuizViewModel(quizRepository = get()) }
+    viewModel { ResultsViewModel(savedStateHandle = get()) }
 }
