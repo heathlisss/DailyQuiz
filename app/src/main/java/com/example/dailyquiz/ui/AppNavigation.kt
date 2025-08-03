@@ -67,9 +67,10 @@ fun AppNavigation() {
             HistoryScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToReview = { attemptId ->
-                    navController.navigate(
-                        "${AppDestinations.RESULTS_ROUTE}/$attemptId?${AppDestinations.START_WITH_REVIEW_ARG}=true"
-                    )
+                    navController.navigate("${AppDestinations.RESULTS_ROUTE}/$attemptId")
+                },
+                onStartQuiz = {
+                    navController.popBackStack()
                 }
             )
         }

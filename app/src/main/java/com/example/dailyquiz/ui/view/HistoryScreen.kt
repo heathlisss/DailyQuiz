@@ -1,5 +1,6 @@
 package com.example.dailyquiz.ui.view
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,9 +29,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,6 +45,7 @@ import com.example.dailyquiz.R
 import com.example.dailyquiz.data.model.QuizHistoryItem
 import com.example.dailyquiz.ui.theme.DailyQuizTheme
 import com.example.dailyquiz.ui.theme.Gray
+import com.example.dailyquiz.ui.theme.Purple
 import com.example.dailyquiz.ui.theme.Yellow
 import com.example.dailyquiz.viewmodel.HistoryEvent
 import com.example.dailyquiz.viewmodel.HistoryViewModel
@@ -54,21 +58,11 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     onBack: () -> Unit,
-    onNavigateToReview: (Long) -> Unit
+    onNavigateToReview: (Long) -> Unit,
+    onStartQuiz: () -> Unit
 ) {
     val viewModel: HistoryViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.navigationEvent.collect { event ->
-            when (event) {
-                is com.example.dailyquiz.viewmodel.HistoryNavigationEvent.ToReview -> onNavigateToReview(
-                    event.attemptId
-                )
-                com.example.dailyquiz.viewmodel.HistoryNavigationEvent.GoBack -> onBack()
-            }
-        }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -84,7 +78,7 @@ fun HistoryScreen(
                     .padding(horizontal = 4.dp, vertical = 32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { viewModel.onEvent(HistoryEvent.OnBackClicked) }) {
+                IconButton(onClick = { onStartQuiz() }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
@@ -107,16 +101,11 @@ fun HistoryScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
-
                 state.isEmpty -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "Вы еще не проходили ни одной викторины",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    EmptyHistoryContent(
+                        onStartQuizClicked = { onStartQuiz() }
+                    )
                 }
-
                 else -> {
                     LazyColumn(
                         modifier = Modifier
@@ -137,6 +126,74 @@ fun HistoryScreen(
         }
     }
 }
+
+@Composable
+private fun EmptyHistoryContent(
+    onStartQuizClicked: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(40.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Text(
+                        text = "Вы еще не проходили ни одной викторины",
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Button(
+                        onClick = onStartQuizClicked,
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        shape = RoundedCornerShape(13.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Purple,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            text = "НАЧАТЬ ВИКТОРИНУ",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(6.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
+        Image(
+            painter = painterResource(R.drawable.logo),
+            contentDescription = "Логотип",
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+                .height(40.dp)
+        )
+    }
+}
+
 
 @Composable
 private fun HistoryItemCard(
@@ -214,6 +271,33 @@ private fun formatTimestampToTime(timestamp: Long): String {
     val date = Date(timestamp)
     val format = SimpleDateFormat("HH:mm", Locale.getDefault())
     return format.format(date)
+}
+
+@Preview(showBackground = true, name = "History Screen - Empty")
+@Composable
+private fun HistoryScreenEmptyPreview() {
+    DailyQuizTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+//                    IconButton(onClick = {}) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад") }
+                    Text(
+                        "История",
+                        style = MaterialTheme.typography.headlineLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+//                    Spacer(modifier = Modifier.width(48.dp))
+                }
+                EmptyHistoryContent(onStartQuizClicked = {})
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)
