@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,8 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.dailyquiz.R
@@ -65,60 +65,72 @@ fun HistoryScreen(
                 is com.example.dailyquiz.viewmodel.HistoryNavigationEvent.ToReview -> onNavigateToReview(
                     event.attemptId
                 )
-
                 com.example.dailyquiz.viewmodel.HistoryNavigationEvent.GoBack -> onBack()
             }
         }
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("История") },
-                navigationIcon = {
-                    IconButton(onClick = { viewModel.onEvent(HistoryEvent.OnBackClicked) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
-                )
-            )
-        },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        when {
-            state.isLoading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
-                }
-            }
-
-            state.isEmpty -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        "Вы еще не проходили ни одной викторины",
-                        color = MaterialTheme.colorScheme.onBackground
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { viewModel.onEvent(HistoryEvent.OnBackClicked) }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
+                Text(
+                    text = "История",
+                    style = MaterialTheme.typography.headlineLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    itemsIndexed(state.attempts) { index, attempt ->
-                        HistoryItemCard(
-                            item = attempt,
-                            quizNumber = state.attempts.size - index,
-                            onClick = { viewModel.onEvent(HistoryEvent.OnAttemptClicked(attempt.id)) }
+            when {
+                state.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
+                    }
+                }
+
+                state.isEmpty -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            "Вы еще не проходили ни одной викторины",
+                            color = MaterialTheme.colorScheme.onBackground
                         )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        itemsIndexed(state.attempts) { index, attempt ->
+                            HistoryItemCard(
+                                item = attempt,
+                                quizNumber = state.attempts.size - index,
+                                onClick = { viewModel.onEvent(HistoryEvent.OnAttemptClicked(attempt.id)) }
+                            )
+                        }
                     }
                 }
             }
@@ -208,17 +220,40 @@ private fun formatTimestampToTime(timestamp: Long): String {
 @Composable
 private fun HistoryScreenPreview() {
     DailyQuizTheme {
-        val fakeAttempts = listOf(
-            QuizHistoryItem(1, System.currentTimeMillis() - 86400000, "4/5", "General", "Easy"),
-            QuizHistoryItem(2, System.currentTimeMillis() - 172800000, "2/5", "General", "Easy")
-        )
-        Scaffold(
-            topBar = { }
-        ) { innerPadding ->
-            LazyColumn(
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 40.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                IconButton(onClick = {}) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Text(
+                    text = "История",
+                    style = MaterialTheme.typography.headlineLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(48.dp))
+            }
+
+            val fakeAttempts = listOf(
+                QuizHistoryItem(1, System.currentTimeMillis() - 86400000, "4/5", "General", "Easy"),
+                QuizHistoryItem(2, System.currentTimeMillis() - 172800000, "2/5", "General", "Easy")
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -226,7 +261,8 @@ private fun HistoryScreenPreview() {
                     HistoryItemCard(
                         item = attempt,
                         quizNumber = fakeAttempts.size - index,
-                        onClick = {})
+                        onClick = {}
+                    )
                 }
             }
         }
